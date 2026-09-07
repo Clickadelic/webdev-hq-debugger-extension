@@ -39,19 +39,17 @@ export default defineConfig({
 		},
 		content_scripts: [
 			{
-				// css: ["content.css"],
-				js: ["content/index.js"],
+				js: ["content-scripts/content.js"],
 				matches: ["*://*/*"]
 			}
 		],
-		// host_permissions: ["<all_urls>"],
-		host_permissions: ["https://webdev-hq.com/*"],
+		host_permissions: ["*://*/*"],
 		background: {
 			service_worker: "background.js"
 		},
 		web_accessible_resources: [
 			{
-				resources: ["assets/css/pesticide.css"],
+				resources: ["pesticide.css", "meazure-style.css"],
 				matches: ["<all_urls>"]
 			}
 		]

@@ -13,8 +13,8 @@ export default defineBackground(() => {
 			});
 
 			chrome.contextMenus.create({
-				id: "webdev-hq-save-webpage",
-				title: getMenuTitle("save_webpage_to_headquarter", "Save webpage to WebDev HQ"),
+				id: "webdev-hq-toggle-rulers",
+				title: getMenuTitle("toggle_rulers", "Toggle rulers"),
 				type: "normal",
 				contexts: ["selection", "page"]
 			});
@@ -39,11 +39,18 @@ export default defineBackground(() => {
 	// 4. KONTEXTMENÜ KLICK
 	// ==========================================
 	chrome.contextMenus.onClicked.addListener((info, tab) => {
-		if (info.menuItemId === "webdev-hq-inject-css" && tab?.id) {
-			// Wir senden jetzt "toggleStylesheet" statt fest "inject"
+		if (!tab?.id) return;
+
+		if (info.menuItemId === "webdev-hq-inject-css") {
 			chrome.tabs.sendMessage(tab.id, {
 				command: "toggleStylesheet",
-				stylesheet: "assets/pesticide.css"
+				stylesheet: "pesticide.css"
+			});
+		}
+
+		if (info.menuItemId === "webdev-hq-toggle-rulers") {
+			chrome.tabs.sendMessage(tab.id, {
+				command: "toggleRulers"
 			});
 		}
 	});
@@ -59,10 +66,8 @@ export default defineBackground(() => {
 			files: ["meazure-script.js"]
 		});
 
-		// Auch hier senden wir jetzt den Toggle-Befehl
 		chrome.tabs.sendMessage(tab.id, {
-			command: "toggleStylesheet",
-			stylesheet: "assets/pesticide.css"
+			command: "toggleRulers"
 		});
 	});
 });
