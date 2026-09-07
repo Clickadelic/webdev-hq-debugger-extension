@@ -1,7 +1,5 @@
 export default defineContentScript({
-	registration: "runtime",
-	matches: [],
-	cssInjectionMode: "ui",
+	matches: ["*://*/*"],
 
 	async main(ctx) {
 		const RULERS_CONTAINER_ID = "webdev-hq-rulers-container";
@@ -137,10 +135,84 @@ export default defineContentScript({
 			measureLabel.className = "webdev-hq-measure-label";
 			container.appendChild(measureLabel);
 
+			// loupe (magnifying glass)
+			const loupe = document.createElement("canvas");
+			loupe.className = "webdev-hq-loupe";
+			container.appendChild(loupe);
+			const loupeCtx = loupe.getContext("2d");
+			const LOUPE_SIZE = 140;
+			const LOUPE_ZOOM = 3;
+			const lctxDpr = window.devicePixelRatio || 1;
+			loupe.width = LOUPE_SIZE * lctxDpr;
+			loupe.height = LOUPE_SIZE * lctxDpr;
+			loupe.style.width = `${LOUPE_SIZE}px`;
+			loupe.style.height = `${LOUPE_SIZE}px`;
+
+			let pageShot: HTMLImageElement | null = null;
+			let shotReady = false;
+			let shotScaleX = 1;
+			let shotScaleY = 1;
+
+			const capturePage = () => {
+				shotReady = false;
+				chrome.runtime.sendMessage({ command: "captureVisibleTab" }, response => {
+					if (!response || response.error || !response.dataUrl) {
+						shotReady = false;
+						return;
+					}
+					const img = new Image();
+					img.onload = () => {
+						pageShot = img;
+						shotScaleX = img.naturalWidth / window.innerWidth;
+						shotScaleY = img.naturalHeight / window.innerHeight;
+						shotReady = true;
+					};
+					img.src = response.dataUrl;
+				});
+			};
+
+			const drawLoupe = (x: number, y: number) => {
+				if (!loupeCtx) return;
+				loupeCtx.setTransform(lctxDpr, 0, 0, lctxDpr, 0, 0);
+				loupeCtx.clearRect(0, 0, LOUPE_SIZE, LOUPE_SIZE);
+				// circular clip
+				loupeCtx.save();
+				loupeCtx.beginPath();
+				loupeCtx.arc(LOUPE_SIZE / 2, LOUPE_SIZE / 2, LOUPE_SIZE / 2, 0, Math.PI * 2);
+				loupeCtx.clip();
+
+				if (shotReady && pageShot) {
+					const srcSize = LOUPE_SIZE / LOUPE_ZOOM;
+					const sx = x * shotScaleX - srcSize / 2;
+					const sy = y * shotScaleY - srcSize / 2;
+					loupeCtx.imageSmoothingEnabled = false;
+					loupeCtx.drawImage(pageShot, sx, sy, srcSize, srcSize, 0, 0, LOUPE_SIZE, LOUPE_SIZE);
+				} else {
+					loupeCtx.fillStyle = "#222";
+					loupeCtx.fillRect(0, 0, LOUPE_SIZE, LOUPE_SIZE);
+					loupeCtx.fillStyle = "#aaa";
+					loupeCtx.font = "11px sans-serif";
+					loupeCtx.textAlign = "center";
+					loupeCtx.fillText("capture unavailable", LOUPE_SIZE / 2, LOUPE_SIZE / 2);
+				}
+
+				// crosshair inside loupe
+				loupeCtx.strokeStyle = "rgba(255,59,48,0.9)";
+				loupeCtx.lineWidth = 1;
+				loupeCtx.beginPath();
+				loupeCtx.moveTo(LOUPE_SIZE / 2, 0);
+				loupeCtx.lineTo(LOUPE_SIZE / 2, LOUPE_SIZE);
+				loupeCtx.moveTo(0, LOUPE_SIZE / 2);
+				loupeCtx.lineTo(LOUPE_SIZE, LOUPE_SIZE / 2);
+				loupeCtx.stroke();
+				loupeCtx.restore();
+			};
+
 			document.body.appendChild(container);
 
 			const redraw = () => drawRulers(topRuler, leftRuler);
 			redraw();
+			capturePage();
 
 			let dragStart: { x: number; y: number } | null = null;
 
@@ -186,6 +258,16 @@ export default defineContentScript({
 				if (ry + 24 > window.innerHeight) ry = y - 24 - pad;
 				readout.style.left = `${rx}px`;
 				readout.style.top = `${ry}px`;
+
+				// position loupe opposite the readout, keep in viewport
+				const lpad = 18;
+				let lx = x + lpad;
+				let ly = y + lpad;
+				if (lx + LOUPE_SIZE > window.innerWidth) lx = x - LOUPE_SIZE - lpad;
+				if (ly + LOUPE_SIZE > window.innerHeight) ly = y - LOUPE_SIZE - lpad;
+				loupe.style.left = `${lx}px`;
+				loupe.style.top = `${ly}px`;
+				drawLoupe(x, y);
 			};
 
 			const onMouseDown = (e: MouseEvent) => {

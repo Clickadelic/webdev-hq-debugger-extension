@@ -37,12 +37,6 @@ export default defineConfig({
 		side_panel: {
 			default_path: "entrypoints/sidepanel/index.html"
 		},
-		content_scripts: [
-			{
-				js: ["content-scripts/content.js"],
-				matches: ["*://*/*"]
-			}
-		],
 		host_permissions: ["*://*/*"],
 		background: {
 			service_worker: "background.js"

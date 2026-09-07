@@ -70,4 +70,20 @@ export default defineBackground(() => {
 			command: "toggleRulers"
 		});
 	});
+
+	// Capture the visible tab so the content script can render a loupe.
+	chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+		if (message?.command === "captureVisibleTab") {
+			const windowId = sender.tab?.windowId ?? chrome.windows.WINDOW_ID_CURRENT;
+			chrome.tabs.captureVisibleTab(windowId, { format: "png" }, dataUrl => {
+				if (chrome.runtime.lastError) {
+					sendResponse({ error: chrome.runtime.lastError.message });
+				} else {
+					sendResponse({ dataUrl });
+				}
+			});
+			return true; // async response
+		}
+		return false;
+	});
 });
