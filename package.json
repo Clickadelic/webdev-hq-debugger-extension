@@ -1,8 +1,8 @@
 {
-	"name": "webdev-hq-debugger",
-	"description": "manifest.json description",
+	"name": "WebDev HQ - Debugger",
+	"description": "An extension to make your debugging life easier and more productive.",
 	"private": true,
-	"version": "0.0.0",
+	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
 		"dev": "wxt",
