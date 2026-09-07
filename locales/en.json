@@ -6,5 +6,9 @@
 	"enable_disable_debug_css": {
 		"message": "activate/deactivate debug CSS",
 		"description": "Inject debug CSS text."
+	},
+	"toggle_rulers": {
+		"message": "toggle rulers",
+		"description": "Show or hide the page rulers."
 	}
 }
