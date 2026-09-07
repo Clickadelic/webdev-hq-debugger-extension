@@ -35,12 +35,12 @@ export default defineConfig({
 			"system.storage"
 		],
 		side_panel: {
-			default_path: "sidepanel.html"
+			default_path: "entrypoints/sidepanel/index.html"
 		},
 		content_scripts: [
 			{
-				css: ["content-scripts/content.css"],
-				js: ["content-scripts/content.js"],
+				// css: ["content.css"],
+				js: ["content/index.js"],
 				matches: ["*://*/*"]
 			}
 		],
